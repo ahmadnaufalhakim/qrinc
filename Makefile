@@ -24,9 +24,9 @@ run: dev
 	./$(OUT)
 
 test:
-    mkdir -p build
-    $(CC) $(CFLAGS) $(DEVFLAGS) $(LIB_SRC) $(TEST_SRC) -o $(TEST_OUT)
-    ./$(TEST_OUT)
+	mkdir -p build
+	$(CC) $(CFLAGS) $(DEVFLAGS) $(LIB_SRC) $(TEST_SRC) -o $(TEST_OUT)
+	./$(TEST_OUT)
 
 clean:
 	rm -rf build
