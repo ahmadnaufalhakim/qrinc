@@ -5,6 +5,8 @@ DEVFLAGS = -fsanitize=address -g
 RELEASEFLAGS = -O2
 
 SRC = $(wildcard src/*.c)
+APP_MAIN = src/main.c
+LIB_SRC = $(filter-out $(APP_MAIN), $(SRC))
 TEST_SRC = $(wildcard tests/*.c)
 
 OUT = build/app
@@ -23,7 +25,7 @@ run: dev
 
 test:
     mkdir -p build
-    $(CC) $(CFLAGS) $(DEVFLAGS) $(SRC) $(TEST_SRC) -o $(TEST_OUT)
+    $(CC) $(CFLAGS) $(DEVFLAGS) $(LIB_SRC) $(TEST_SRC) -o $(TEST_OUT)
     ./$(TEST_OUT)
 
 clean:
