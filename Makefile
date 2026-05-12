@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -Wall -Wextra -std=c11
+CFLAGS = -Iinclude -Wall -Wextra -std=c11
 DEVFLAGS = -fsanitize=address -g
 RELEASEFLAGS = -O2
 
