@@ -1,7 +1,18 @@
 CC = gcc
 
-CFLAGS = -Iinclude -Wall -Wextra -std=c11
-DEVFLAGS = -fsanitize=address -g
+CFLAGS = \
+	-Iinclude \
+	-Wall \
+	-Wextra \
+	-Wpedantic \
+	-Wconversion \
+	-Wsign-conversion \
+	-Wno-override-init \
+	-std=c11
+DEVFLAGS = \
+	-fsanitize=address,undefined \
+	-fno-omit-frame-pointer \
+	-g3
 RELEASEFLAGS = -O2
 
 SRC = $(wildcard src/*.c)
