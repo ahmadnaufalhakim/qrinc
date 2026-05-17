@@ -28,6 +28,63 @@ void test_detect_kanji_mode() {
     assert(qr_detect_mode((const uint8_t*)s, strlen(s)) == QR_MODE_KANJI);
 }
 
+void test_qr_char_count_indicator() {
+    {
+        // Numeric mode, version 1-9 => 10 bits
+        char* bits = qr_char_count_indicator(
+            QR_MODE_NUMERIC,
+            1,
+            867);
+
+        assert(bits != NULL);
+        assert(strcmp(bits, "1101100011") == 0);
+
+        free(bits);
+    }
+
+    {
+        // Alphanumeric mode, version 1-9 => 9 bits
+        // 11 => 000001011
+        char* bits = (char*)qr_char_count_indicator(
+            QR_MODE_ALPHANUMERIC,
+            5,
+            11);
+
+        assert(bits != NULL);
+        assert(strcmp(bits, "000001011") == 0);
+
+        free(bits);
+    }
+
+    {
+        // Byte mode, version 10-26 => 16 bits
+        // 13 => 0000000000001101
+        char* bits = (char*)qr_char_count_indicator(
+            QR_MODE_BYTE,
+            10,
+            13);
+
+        assert(bits != NULL);
+        assert(strcmp(bits, "0000000000001101") == 0);
+
+        free(bits);
+    }
+
+    {
+        // Kanji mode, version 27-40 => 12 bits
+        // 42 => 000000101010
+        char* bits = (char*)qr_char_count_indicator(
+            QR_MODE_KANJI,
+            30,
+            42);
+
+        assert(bits != NULL);
+        assert(strcmp(bits, "000000101010") == 0);
+
+        free(bits);
+    }
+}
+
 void test_print_binary() {
     char out[16];
 
@@ -174,6 +231,9 @@ void test_encoding() {
 
     TEST("print binary");
     test_print_binary();
+
+    TEST("QR char count indicator");
+    test_qr_char_count_indicator();
 
     TEST("QR numeric mode encode");
     test_qr_numeric_mode_encode();

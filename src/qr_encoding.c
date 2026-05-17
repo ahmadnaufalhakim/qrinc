@@ -22,6 +22,13 @@ static void qr_init_alphanumeric_table(void) {
     initialized = 1;
 }
 
+static const int qr_char_count_indicator_bits[QR_MODE_COUNT][3] = {
+    [QR_MODE_NUMERIC] = {10, 12, 14},
+    [QR_MODE_ALPHANUMERIC] = {9, 11, 13},
+    [QR_MODE_BYTE] = {8, 16, 16},
+    [QR_MODE_KANJI] = {8, 10, 12},
+};
+
 int8_t qr_alphanumeric_value(uint8_t c) {
     if (!initialized) {
         qr_init_alphanumeric_table();
@@ -58,6 +65,30 @@ const char* qr_mode_indicator(qr_mode_t mode) {
         default:
             return "UNKNOWN";
     }
+}
+
+const char* qr_char_count_indicator(qr_mode_t mode, int version, size_t char_count) {
+    int idx;
+
+    if (version >= 1 && version <= 9) {
+        idx = 0;
+    } else if (version >= 10 && version <= 26) {
+        idx = 1;
+    } else if (version >= 27 && version <= 40) {
+        idx = 2;
+    } else {
+        return NULL;
+    }
+
+    int bits = qr_char_count_indicator_bits[mode][idx];
+    char* count_indicator = malloc((size_t)bits * sizeof(count_indicator));
+    if (!count_indicator) {
+        return NULL;
+    }
+
+    print_binary((unsigned)char_count, bits, count_indicator);
+
+    return count_indicator;
 }
 
 void print_binary(unsigned value, int bits, char* out) {

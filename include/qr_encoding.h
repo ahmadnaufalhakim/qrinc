@@ -19,6 +19,7 @@ typedef enum {
 int8_t qr_alphanumeric_value(uint8_t c);
 const char* qr_mode_to_str(qr_mode_t mode);
 const char* qr_mode_indicator(qr_mode_t mode);
+const char* qr_char_count_indicator(qr_mode_t mode, int version, size_t char_count);
 void print_binary(unsigned value, int bits, char* out);
 
 // Character checks
