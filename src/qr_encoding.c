@@ -45,6 +45,21 @@ const char* qr_mode_to_str(qr_mode_t mode) {
     }
 }
 
+const char* qr_mode_indicator(qr_mode_t mode) {
+    switch (mode) {
+        case QR_MODE_NUMERIC:
+            return "0001";
+        case QR_MODE_ALPHANUMERIC:
+            return "0010";
+        case QR_MODE_BYTE:
+            return "0100";
+        case QR_MODE_KANJI:
+            return "1000";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 void print_binary(unsigned value, int bits, char* out) {
     for (int i = bits - 1; i >= 0; i--) {
         *out++ = (1 & (value >> i)) ? '1' : '0';
