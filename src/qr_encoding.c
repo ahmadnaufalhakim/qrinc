@@ -81,7 +81,7 @@ const char* qr_char_count_indicator(qr_mode_t mode, int version, size_t char_cou
     }
 
     int bits = qr_char_count_indicator_bits[mode][idx];
-    char* count_indicator = malloc((size_t)bits * sizeof(count_indicator));
+    char* count_indicator = malloc((size_t)(bits + 1) * sizeof(*count_indicator));
     if (!count_indicator) {
         return NULL;
     }
