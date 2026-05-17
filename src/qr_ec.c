@@ -1,6 +1,6 @@
 #include "qr_ec.h"
 
-#include "qr_character_capacity.h"
+#include "qr_char_capacity.h"
 
 int qr_detect_version(qr_mode_t mode, qr_ec_level_t ec_level, int min_version, size_t char_count) {
     switch (ec_level) {
@@ -15,13 +15,13 @@ int qr_detect_version(qr_mode_t mode, qr_ec_level_t ec_level, int min_version, s
 
             for (int i = 0; i < total; i++) {
                 int version = i + min_version;
-                size_t low_character_capacity = qr_character_capacity(mode, ec_level, version);
-                size_t high_character_capacity = qr_character_capacity(mode, ec_level, 40 - version - 1);
+                size_t low_char_capacity = qr_char_capacity(mode, ec_level, version);
+                size_t high_char_capacity = qr_char_capacity(mode, ec_level, 40 - version - 1);
 
-                if (low_character_capacity >= char_count) {
+                if (low_char_capacity >= char_count) {
                     return version;
                 }
-                if (high_character_capacity < char_count) {
+                if (high_char_capacity < char_count) {
                     if (version != 0) {
                         return 40 - version;
                     } else {

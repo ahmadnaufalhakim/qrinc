@@ -1,9 +1,9 @@
-#include "qr_character_capacity.h"
+#include "qr_char_capacity.h"
 
 #include "qr_ec.h"
 #include "qr_encoding.h"
 
-static const size_t qr_character_capacities_table[QR_MODE_COUNT][QR_EC_LEVEL_COUNT][40] = {
+static const size_t qr_char_capacities_table[QR_MODE_COUNT][QR_EC_LEVEL_COUNT][40] = {
     [QR_MODE_NUMERIC] = {
         [QR_EC_LEVEL_L] = {41, 77, 127, 187, 255, 322, 370, 461, 552, 652, 772, 883, 1022, 1101, 1250, 1408, 1548, 1725, 1903, 2061, 2232, 2409, 2620, 2812, 3057, 3283, 3517, 3669, 3909, 4158, 4417, 4686, 4965, 5253, 5529, 5836, 6153, 6479, 6743, 7089},
         [QR_EC_LEVEL_M] = {34, 63, 101, 149, 202, 255, 293, 365, 432, 513, 604, 691, 796, 871, 991, 1082, 1212, 1346, 1500, 1600, 1708, 1872, 2059, 2188, 2395, 2544, 2701, 2857, 3035, 3289, 3486, 3693, 3909, 4134, 4343, 4588, 4775, 5039, 5313, 5596},
@@ -30,6 +30,6 @@ static const size_t qr_character_capacities_table[QR_MODE_COUNT][QR_EC_LEVEL_COU
     },
 };
 
-size_t qr_character_capacity(qr_mode_t mode, qr_ec_level_t ec_level, int version) {
-    return qr_character_capacities_table[mode][ec_level][version - 1];
+size_t qr_char_capacity(qr_mode_t mode, qr_ec_level_t ec_level, int version) {
+    return qr_char_capacities_table[mode][ec_level][version - 1];
 }
