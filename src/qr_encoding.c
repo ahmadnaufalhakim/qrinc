@@ -40,8 +40,6 @@ const char* qr_mode_to_str(qr_mode_t mode) {
             return "BYTE";
         case QR_MODE_KANJI:
             return "KANJI";
-        case QR_MODE_AUTO:
-            return "AUTO";
         default:
             return "UNKNOWN";
     }
@@ -64,8 +62,6 @@ bool qr_is_alphanumeric(uint8_t c) {
 
 bool qr_mode_can_encode(const uint8_t* s, size_t len, qr_mode_t mode) {
     switch (mode) {
-        case QR_MODE_AUTO:
-            return true;
         case QR_MODE_NUMERIC:
             for (size_t i = 0; i < len; i++) {
                 if (!qr_is_numeric(s[i])) {

@@ -6,11 +6,12 @@
 #include <stdint.h>
 
 typedef enum {
-    QR_MODE_AUTO,
     QR_MODE_NUMERIC,
     QR_MODE_ALPHANUMERIC,
     QR_MODE_BYTE,
     QR_MODE_KANJI,
+
+    QR_MODE_COUNT,
 } qr_mode_t;
 
 // Utilities
