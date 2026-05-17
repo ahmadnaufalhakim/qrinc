@@ -18,7 +18,9 @@ RELEASEFLAGS = -O2
 SRC = $(wildcard src/*.c)
 APP_MAIN = src/main.c
 LIB_SRC = $(filter-out $(APP_MAIN), $(SRC))
-TEST_SRC = $(wildcard tests/*.c)
+
+TEST_MAIN = tests/test_main.c
+TEST_SRC = $(filter-out $(TEST_MAIN), $(wildcard tests/*.c))
 
 OUT = build/app
 TEST_OUT = build/test
@@ -36,7 +38,7 @@ run: dev
 
 test:
 	mkdir -p build
-	$(CC) $(CFLAGS) $(DEVFLAGS) $(LIB_SRC) $(TEST_SRC) -o $(TEST_OUT)
+	$(CC) $(CFLAGS) $(DEVFLAGS) $(LIB_SRC) $(TEST_SRC) $(TEST_MAIN) -o $(TEST_OUT)
 	./$(TEST_OUT)
 
 clean:
