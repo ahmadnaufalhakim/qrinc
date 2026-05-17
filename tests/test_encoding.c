@@ -159,18 +159,34 @@ void test_qr_kanji_mode_encode() {
     return;
 }
 
-int main() {
+void test_encoding() {
+    TEST("detect numeric mode");
     test_detect_numeric_mode();
+
+    TEST("detect alphanumeric mode");
     test_detect_alphanumeric_mode();
+
+    TEST("detect byte mode");
     test_detect_byte_mode();
+
+    // TEST("detect kanji mode");
     // test_detect_kanji_mode();
 
+    TEST("print binary");
     test_print_binary();
+
+    TEST("QR numeric mode encode");
     test_qr_numeric_mode_encode();
+
+    TEST("QR alphanumeric mode encode");
     test_qr_alphanumeric_mode_encode();
+
+    TEST("QR byte mode encode");
     test_qr_byte_mode_encode();
+
+    // TEST("QR kanji mode encode");
     // test_qr_kanji_mode_encode();
 
-    printf("ALL TESTS PASSED\n");
-    return 0;
+    printf("ALL ENCODING TESTS PASSED\n");
+    return;
 }
