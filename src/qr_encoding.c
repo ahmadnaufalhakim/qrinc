@@ -48,7 +48,7 @@ const char* qr_mode_to_str(qr_mode_t mode) {
         case QR_MODE_KANJI:
             return "KANJI";
         default:
-            return "UNKNOWN";
+            return NULL;
     }
 }
 
@@ -63,7 +63,7 @@ const char* qr_mode_indicator(qr_mode_t mode) {
         case QR_MODE_KANJI:
             return "1000";
         default:
-            return "UNKNOWN";
+            return NULL;
     }
 }
 
