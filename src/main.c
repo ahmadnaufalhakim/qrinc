@@ -5,8 +5,8 @@
 #include "qr_ec.h"
 #include "qr_encoding.h"
 
-int main(int argc, char* argv[]) {
-    const char* text = "Hello, world! 123";
+int main(void) {
+    const char* text = "Hello, world!👋 What a great day we're havin'!";
     size_t len = strlen(text);
 
     // 1. Detect encoding mode
@@ -14,140 +14,71 @@ int main(int argc, char* argv[]) {
     printf("Input: %s\n", text);
     printf("Mode: %s\n\n", qr_mode_to_str(mode));
 
-    // 2. Encode input string
-    size_t data_count = 0;
-
-    // We'll store encoded chunks generically as char**
-    char** data_bits = NULL;
-
-    switch (mode) {
-        case QR_MODE_NUMERIC: {
-            char (*chunks)[11] =
-                qr_numeric_mode_encode(text, len, &data_count);
-
-            if (!chunks) {
-                fprintf(stderr, "numeric encoding failed\n");
-                return 1;
-            }
-
-            data_bits = malloc(data_count * sizeof(*data_bits));
-            if (!data_bits) {
-                free(chunks);
-                return 1;
-            }
-
-            for (size_t i = 0; i < data_count; i++) {
-                data_bits[i] = chunks[i];
-            }
-
-            break;
-        }
-
-        case QR_MODE_ALPHANUMERIC: {
-            char (*chunks)[12] =
-                qr_alphanumeric_mode_encode(text, len, &data_count);
-
-            if (!chunks) {
-                fprintf(stderr, "alphanumeric encoding failed\n");
-                return 1;
-            }
-
-            data_bits = malloc(data_count * sizeof(*data_bits));
-            if (!data_bits) {
-                free(chunks);
-                return 1;
-            }
-
-            for (size_t i = 0; i < data_count; i++) {
-                data_bits[i] = chunks[i];
-            }
-
-            break;
-        }
-
-        case QR_MODE_BYTE: {
-            char (*chunks)[9] =
-                qr_byte_mode_encode(text, len, &data_count);
-
-            if (!chunks) {
-                fprintf(stderr, "byte encoding failed\n");
-                return 1;
-            }
-
-            data_bits = malloc(data_count * sizeof(*data_bits));
-            if (!data_bits) {
-                free(chunks);
-                return 1;
-            }
-
-            for (size_t i = 0; i < data_count; i++) {
-                data_bits[i] = chunks[i];
-            }
-
-            break;
-        }
-
-        default:
-            fprintf(stderr, "unsupported mode\n");
-            return 1;
-    }
-
-    // 3. Determine version
-    int version = qr_detect_version(mode, QR_EC_LEVEL_L, 29, data_count);
+    // 2. Determine version
+    int version = qr_detect_version(mode, QR_EC_LEVEL_L, 1, len);
 
     printf("Version: %d\n\n", version);
 
-    // 4. Construct bit strings
+    // 3. Create bitstream
+    qr_bitstream_t bs;
 
-    const char* mode_indicator =
-        qr_mode_indicator(mode);
-
-    const char* char_count_indicator =
-        qr_char_count_indicator(mode, version, len);
-
-    if (!mode_indicator || !char_count_indicator) {
-        fprintf(stderr, "indicator generation failed\n");
-        free(data_bits);
+    if (!qr_bitstream_init(&bs)) {
+        fprintf(stderr, "bitstream init failed\n");
+        qr_bitstream_free(&bs);
         return 1;
     }
 
-    printf("Mode indicator:       %s\n", mode_indicator);
-    printf("Char count indicator: %s\n\n", char_count_indicator);
+    // 4. Append mode indicator (4 bits)
+    uint8_t mode_indicator = qr_mode_indicator(mode);
+    if (!qr_bitstream_append_bits(&bs, mode_indicator, 4)) {
+        fprintf(stderr, "failed appending mode indicator\n");
+        qr_bitstream_free(&bs);
+        return 1;
+    };
 
-    printf("Data bits:\n");
-
-    for (size_t i = 0; i < data_count; i++) {
-        printf("chunk %zu: %s\n", i, data_bits[i]);
+    // 5. Append character count indicator
+    int cc_indicator_bits = qr_char_count_indicator_bits(mode, version);
+    if (!qr_bitstream_append_bits(&bs, (uint32_t)len, cc_indicator_bits)) {
+        fprintf(stderr, "failed appending char count\n");
+        qr_bitstream_free(&bs);
+        return 1;
     }
 
-    // Example: assemble final bit stream
-    printf("\nFinal bit stream:\n");
+    // 6. Encode payload
+    bool ok = false;
+    switch (mode) {
+        case QR_MODE_NUMERIC:
+            ok = qr_numeric_mode_encode(&bs, text, len);
+            break;
 
-    printf("%s", mode_indicator);
-    printf("%s", char_count_indicator);
+        case QR_MODE_ALPHANUMERIC:
+            ok = qr_alphanumeric_mode_encode(&bs, text, len);
+            break;
 
-    for (size_t i = 0; i < data_count; i++) {
-        printf("%s", data_bits[i]);
+        case QR_MODE_BYTE:
+            ok = qr_byte_mode_encode(&bs, text, len);
+            break;
+
+        default:
+            fprintf(stderr, "unsupported mode\n");
+            qr_bitstream_free(&bs);
+            return 1;
     }
 
-    printf("\n");
-
-    // Cleanup
-    free((void*)char_count_indicator);
-
-    // IMPORTANT:
-    // data_bits points into the original chunks allocation.
-    // We free only the original allocation once.
-
-    if (mode == QR_MODE_NUMERIC) {
-        free(data_bits[0]);
-    } else if (mode == QR_MODE_ALPHANUMERIC) {
-        free(data_bits[0]);
-    } else if (mode == QR_MODE_BYTE) {
-        free(data_bits[0]);
+    if (!ok) {
+        fprintf(stderr, "encoding failed\n");
+        qr_bitstream_free(&bs);
+        return 1;
     }
 
-    free(data_bits);
+    // 7. Print final bitstream
+    printf("Final bit stream:\n");
+    qr_bitstream_print(&bs);
+
+    printf("\nTotal bits: %zu\n", bs.bit_len);
+
+    // 8. Cleanup
+    qr_bitstream_free(&bs);
 
     return 0;
 }
