@@ -59,7 +59,7 @@ char* qr_bitstream_to_str(qr_bitstream_t* bs) {
         size_t byte_idx = i / 8;
         int bit_offset = 7 - (i % 8);
 
-        int bit = (bs->data[byte_idx] >> bit_offset) & 1u;
+        int bit = (bs->data[byte_idx] >> bit_offset) & 1;
 
         s[i] = bit ? '1' : '0';
     }
@@ -88,7 +88,7 @@ bool qr_bitstream_append_bit(qr_bitstream_t* bs, bool bit) {
         size_t byte_idx = bs->bit_len / 8;
         int bit_offset = 7 - (bs->bit_len % 8);
 
-        bs->data[byte_idx] |= (1u << bit_offset);
+        bs->data[byte_idx] |= (uint8_t)(1u << bit_offset);
     }
 
     bs->bit_len++;
