@@ -12,7 +12,8 @@ CFLAGS = \
 DEVFLAGS = \
 	-fsanitize=address,undefined \
 	-fno-omit-frame-pointer \
-	-g3
+	-g3 \
+	-fanalyzer
 RELEASEFLAGS = -O2
 
 SRC = $(wildcard src/*.c)
