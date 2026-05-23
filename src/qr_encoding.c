@@ -22,7 +22,7 @@ static void qr_init_alphanumeric_table(void) {
     initialized = 1;
 }
 
-static const int qr_char_count_indicator_bits[QR_MODE_COUNT][3] = {
+static const int qr_char_count_indicator_bits_table[QR_MODE_COUNT][3] = {
     [QR_MODE_NUMERIC] = {10, 12, 14},
     [QR_MODE_ALPHANUMERIC] = {9, 11, 13},
     [QR_MODE_BYTE] = {8, 16, 16},
@@ -35,6 +35,16 @@ int8_t qr_alphanumeric_value(uint8_t c) {
     }
 
     return qr_alphanumeric_table[c];
+}
+
+unsigned qr_alphanumeric_pair_value(uint8_t c_a, uint8_t c_b) {
+    unsigned value = (unsigned)qr_alphanumeric_value(c_a);
+
+    if (c_b != '\0') {
+        value = 45u * value + (unsigned)qr_alphanumeric_value(c_b);
+    }
+
+    return value;
 }
 
 const char* qr_mode_to_str(qr_mode_t mode) {
@@ -52,50 +62,33 @@ const char* qr_mode_to_str(qr_mode_t mode) {
     }
 }
 
-const char* qr_mode_indicator(qr_mode_t mode) {
+uint8_t qr_mode_indicator(qr_mode_t mode) {
     switch (mode) {
         case QR_MODE_NUMERIC:
-            return "0001";
+            return 0x1;
         case QR_MODE_ALPHANUMERIC:
-            return "0010";
+            return 0x2;
         case QR_MODE_BYTE:
-            return "0100";
+            return 0x4;
         case QR_MODE_KANJI:
-            return "1000";
+            return 0x8;
         default:
-            return NULL;
+            return 0;
     }
 }
 
-const char* qr_char_count_indicator(qr_mode_t mode, int version, size_t char_count) {
-    int idx;
+int qr_char_count_indicator_bits(qr_mode_t mode, int version) {
+    int group;
 
-    if (version >= 1 && version <= 9) {
-        idx = 0;
-    } else if (version >= 10 && version <= 26) {
-        idx = 1;
-    } else if (version >= 27 && version <= 40) {
-        idx = 2;
+    if (version <= 9) {
+        group = 0;
+    } else if (version <= 26) {
+        group = 1;
     } else {
-        return NULL;
+        group = 2;
     }
 
-    int bits = qr_char_count_indicator_bits[mode][idx];
-    char* count_indicator = malloc((size_t)(bits + 1) * sizeof(*count_indicator));
-    if (!count_indicator) {
-        return NULL;
-    }
-
-    print_binary((unsigned)char_count, bits, count_indicator);
-
-    return count_indicator;
-}
-
-void print_binary(unsigned value, int bits, char* out) {
-    for (int i = bits - 1; i >= 0; i--) {
-        *out++ = (1 & (value >> i)) ? '1' : '0';
-    }
-    *out = '\0';
+    return qr_char_count_indicator_bits_table[mode][group];
 }
 
 bool qr_is_numeric(uint8_t c) {
@@ -162,22 +155,17 @@ qr_mode_t qr_detect_mode(const uint8_t* s, size_t len) {
     return QR_MODE_BYTE;
 }
 
-char (*qr_numeric_mode_encode(const char* data, size_t len, size_t* count))[11] {
-    size_t n = (len + 2) / 3;
-    if (count) {
-        *count = n;
-    }
-
-    char (*chunks)[11] = (char (*)[11])malloc(n * sizeof(*chunks));
-    if (!chunks) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < n; i++) {
+bool qr_numeric_mode_encode(qr_bitstream_t* bs, const char* data, size_t len) {
+    for (size_t i = 0; i < len; i += 3) {
         char chunk[4] = {0};
-        strncpy(chunk, data + (i * 3), 3);
+        size_t digits = len - i;
+        if (digits > 3) {
+            digits = 3;
+        }
+        memcpy(chunk, data + i, digits);
 
-        size_t digits = strlen(chunk);
+        unsigned value = (unsigned)atoi(chunk);
+
         int bits;
         switch (digits) {
             case 1:
@@ -190,45 +178,31 @@ char (*qr_numeric_mode_encode(const char* data, size_t len, size_t* count))[11] 
                 bits = 10;
                 break;
             default:
-                free(chunks);
-                return NULL;
+                return false;
         }
 
-        print_binary(
-            (unsigned)atoi(chunk),
-            bits,
-            chunks[i]);
+        if (!qr_bitstream_append_bits(bs, value, bits)) {
+            return false;
+        }
     }
 
-    return chunks;
+    return true;
 }
 
-unsigned qr_alphanumeric_pair_value(uint8_t c_a, uint8_t c_b) {
-    unsigned value = (unsigned)qr_alphanumeric_value(c_a);
-
-    if (c_b != '\0') {
-        value = 45u * value + (unsigned)qr_alphanumeric_value(c_b);
-    }
-
-    return value;
-}
-
-char (*qr_alphanumeric_mode_encode(const char* data, size_t len, size_t* count))[12] {
-    size_t n = (len + 1) / 2;
-    if (count) {
-        *count = n;
-    }
-
-    char (*chunks)[12] = (char (*)[12])malloc(n * sizeof(*chunks));
-    if (!chunks) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < n; i++) {
+bool qr_alphanumeric_mode_encode(qr_bitstream_t* bs, const char* data, size_t len) {
+    for (size_t i = 0; i < len; i += 2) {
         char chunk[3] = {0};
-        strncpy(chunk, data + (i * 2), 2);
+        size_t n_chars = len - i;
+        if (n_chars > 2) {
+            n_chars = 2;
+        }
+        memcpy(chunk, data + i, n_chars);
 
-        size_t n_chars = strlen(chunk);
+        unsigned value =
+            qr_alphanumeric_pair_value(
+                (uint8_t)chunk[0],
+                (uint8_t)chunk[1]);
+
         int bits;
         switch (n_chars) {
             case 1:
@@ -238,38 +212,23 @@ char (*qr_alphanumeric_mode_encode(const char* data, size_t len, size_t* count))
                 bits = 11;
                 break;
             default:
-                free(chunks);
-                return NULL;
+                return false;
         }
 
-        print_binary(
-            qr_alphanumeric_pair_value(
-                (uint8_t)chunk[0],
-                (uint8_t)chunk[1]),
-            bits,
-            chunks[i]);
+        if (!qr_bitstream_append_bits(bs, value, bits)) {
+            return false;
+        }
     }
 
-    return chunks;
+    return true;
 }
 
-char (*qr_byte_mode_encode(const char* data, size_t len, size_t* count))[9] {
-    size_t n = len;
-    if (count) {
-        *count = n;
+bool qr_byte_mode_encode(qr_bitstream_t* bs, const char* data, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (!qr_bitstream_append_byte(bs, (uint8_t)data[i])) {
+            return false;
+        }
     }
 
-    char (*chunks)[9] = malloc(n * sizeof(*chunks));
-    if (!chunks) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < n; i++) {
-        print_binary(
-            (unsigned)(uint8_t)data[i],
-            8,
-            chunks[i]);
-    }
-
-    return chunks;
+    return true;
 }

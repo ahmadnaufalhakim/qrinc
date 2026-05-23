@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "qr_bitstream.h"
+
 typedef enum {
     QR_MODE_NUMERIC,
     QR_MODE_ALPHANUMERIC,
@@ -17,10 +19,10 @@ typedef enum {
 // Utilities
 
 int8_t qr_alphanumeric_value(uint8_t c);
+unsigned qr_alphanumeric_pair_value(uint8_t c_a, uint8_t c_b);
 const char* qr_mode_to_str(qr_mode_t mode);
-const char* qr_mode_indicator(qr_mode_t mode);
-const char* qr_char_count_indicator(qr_mode_t mode, int version, size_t char_count);
-void print_binary(unsigned value, int bits, char* out);
+uint8_t qr_mode_indicator(qr_mode_t mode);
+int qr_char_count_indicator_bits(qr_mode_t mode, int version);
 
 // Character checks
 
@@ -35,8 +37,17 @@ qr_mode_t qr_detect_mode(const uint8_t* s, size_t len);
 
 // Encodings
 
-char (*qr_numeric_mode_encode(const char* data, size_t len, size_t* count))[11];
-char (*qr_alphanumeric_mode_encode(const char* data, size_t len, size_t* count))[12];
-char (*qr_byte_mode_encode(const char* data, size_t len, size_t* count))[9];
+bool qr_numeric_mode_encode(
+    qr_bitstream_t* bs,
+    const char* data,
+    size_t len);
+bool qr_alphanumeric_mode_encode(
+    qr_bitstream_t* bs,
+    const char* data,
+    size_t len);
+bool qr_byte_mode_encode(
+    qr_bitstream_t* bs,
+    const char* data,
+    size_t len);
 
 #endif
