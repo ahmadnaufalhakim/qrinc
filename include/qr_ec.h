@@ -14,6 +14,10 @@ typedef enum {
     QR_EC_LEVEL_COUNT,
 } qr_ec_level_t;
 
-int qr_detect_version(qr_mode_t mode, qr_ec_level_t ec_level, int min_version, size_t char_count);
+int qr_detect_version(
+    qr_mode_t mode,
+    qr_ec_level_t ec_level,
+    int min_version,
+    size_t char_count);
 
 #endif
