@@ -49,7 +49,7 @@ void test_large_char_count_high_version() {
 //
 void test_byte_mode_various_sizes() {
     for (int i = 1; i <= 40; i++) {
-        int v = qr_detect_version(QR_MODE_BYTE, QR_EC_LEVEL_L, 1, i * 10);
+        int v = qr_detect_version(QR_MODE_BYTE, QR_EC_LEVEL_L, 1, (size_t)i * 10);
 
         assert(v >= 1 && v <= 40);
     }
