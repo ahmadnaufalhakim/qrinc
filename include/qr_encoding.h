@@ -37,4 +37,9 @@ bool qr_byte_mode_encode(
     const char* data,
     size_t len);
 
+bool qr_assemble_data_codewords(
+    qr_bitstream_t* bs,
+    qr_ec_level_t ec_level,
+    int version);
+
 #endif

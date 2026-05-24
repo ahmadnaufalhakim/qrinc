@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "qr_bitstream.h"
+#include "qr_ec_block_info.h"
+
 static int8_t qr_alphanumeric_table[256];
 static int initialized;
 
@@ -230,6 +233,45 @@ bool qr_alphanumeric_mode_encode(qr_bitstream_t* bs, const char* data, size_t le
 bool qr_byte_mode_encode(qr_bitstream_t* bs, const char* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
         if (!qr_bitstream_append_byte(bs, (uint8_t)data[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool qr_assemble_data_codewords(
+    qr_bitstream_t* bs,
+    qr_ec_level_t ec_level,
+    int version) {
+    qr_ec_block_info_t ec = qr_ec_block_info(ec_level, version);
+
+    int total_data_codewords =
+        ec.groups[0].blocks * ec.groups[0].data_codewords_per_block +
+        ec.groups[1].blocks * ec.groups[1].data_codewords_per_block;
+    int total_data_bits = total_data_codewords * 8;
+
+    int remaining_bits = total_data_bits - (int)bs->bit_len;
+    if (remaining_bits < 0) {
+        fprintf(stderr, "input bits exceed data capacity");
+        return false;
+    }
+
+    int terminator_bits = remaining_bits < 4 ? remaining_bits : 4;
+    if (!qr_bitstream_append_bits(bs, 0, terminator_bits)) {
+        return false;
+    }
+
+    int remainder_bits = (8 - (int)bs->bit_len % 8) % 8;
+    if (!qr_bitstream_append_bits(bs, 0, remainder_bits)) {
+        return false;
+    }
+
+    static const uint8_t pads[2] = {0xEC, 0x11};
+
+    int total_pad_bytes = (total_data_bits - (int)bs->bit_len) / 8;
+    for (int i = 0; i < total_pad_bytes; i++) {
+        if (!qr_bitstream_append_byte(bs, pads[i % 2])) {
             return false;
         }
     }
