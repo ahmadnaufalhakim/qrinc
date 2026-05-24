@@ -84,7 +84,8 @@ int main(void) {
 
     // 7. Print final bitstream
     printf("Final bit stream:\n");
-    qr_bitstream_print(&bs);
+    qr_bitstream_print_str(&bs);
+    qr_bitstream_print_bytes(&bs);
 
     printf("\nTotal bits: %zu\n", bs.bit_len);
 
