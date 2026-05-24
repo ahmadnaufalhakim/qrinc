@@ -2,20 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "qr_bitstream.h"
 #include "qr_ec.h"
 #include "qr_encoding.h"
 
 int main(void) {
     const char* text = "Hello, world!👋 What a great day we're havin'!";
+    const qr_ec_level_t ec_level = QR_EC_LEVEL_L;
     size_t len = strlen(text);
 
     // 1. Detect encoding mode
     qr_mode_t mode = qr_detect_mode((const uint8_t*)text, len);
     printf("Input: %s\n", text);
-    printf("Mode: %s\n\n", qr_mode_to_str(mode));
+    printf("Mode: %s\n", qr_mode_to_str(mode));
+    printf("Error Correction Level: %s\n\n", qr_ec_level_to_str(ec_level));
 
     // 2. Determine version
-    int version = qr_detect_version(mode, QR_EC_LEVEL_L, 1, len);
+    int version = qr_detect_version(mode, ec_level, 1, len);
 
     printf("Version: %d\n\n", version);
 
@@ -67,6 +70,14 @@ int main(void) {
 
     if (!ok) {
         fprintf(stderr, "encoding failed\n");
+        qr_bitstream_free(&bs);
+        return 1;
+    }
+
+    // 7. Assemble data codewords
+    ok = qr_assemble_data_codewords(&bs, ec_level, version);
+    if (!ok) {
+        fprintf(stderr, "data codewords assembling failed");
         qr_bitstream_free(&bs);
         return 1;
     }
