@@ -78,13 +78,17 @@ uint8_t qr_mode_indicator(qr_mode_t mode) {
 }
 
 int qr_char_count_indicator_bits(qr_mode_t mode, int version) {
+    if (version < 1 || version > 40) {
+        return -1;
+    }
+
     int group;
 
     if (version <= 9) {
         group = 0;
     } else if (version <= 26) {
         group = 1;
-    } else {
+    } else if (version <= 40) {
         group = 2;
     }
 
