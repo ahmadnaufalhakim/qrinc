@@ -1,15 +1,7 @@
 #ifndef QR_BITSTREAM_H
 #define QR_BITSTREAM_H
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-
-typedef struct {
-    uint8_t* data;
-    size_t bit_len;
-    size_t byte_cap;
-} qr_bitstream_t;
+#include "qr_types.h"
 
 bool qr_bitstream_init(qr_bitstream_t* bs);
 void qr_bitstream_free(qr_bitstream_t* bs);

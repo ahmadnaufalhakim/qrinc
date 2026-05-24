@@ -1,20 +1,7 @@
 #ifndef QR_ENCODING_H
 #define QR_ENCODING_H
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-
-#include "qr_bitstream.h"
-
-typedef enum {
-    QR_MODE_NUMERIC,
-    QR_MODE_ALPHANUMERIC,
-    QR_MODE_BYTE,
-    QR_MODE_KANJI,
-
-    QR_MODE_COUNT,
-} qr_mode_t;
+#include "qr_types.h"
 
 // Utilities
 

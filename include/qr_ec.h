@@ -1,18 +1,7 @@
 #ifndef QR_EC_H
 #define QR_EC_H
 
-#include <stddef.h>
-
-#include "qr_encoding.h"
-
-typedef enum {
-    QR_EC_LEVEL_L,
-    QR_EC_LEVEL_M,
-    QR_EC_LEVEL_Q,
-    QR_EC_LEVEL_H,
-
-    QR_EC_LEVEL_COUNT,
-} qr_ec_level_t;
+#include "qr_types.h"
 
 const char* qr_ec_level_to_str(qr_ec_level_t ec_level);
 
