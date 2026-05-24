@@ -2,6 +2,25 @@
 
 #include "qr_char_capacity.h"
 
+const char* qr_ec_level_to_str(qr_ec_level_t ec_level) {
+    switch (ec_level) {
+        case QR_EC_LEVEL_L:
+            return "Low (~7%)";
+            break;
+        case QR_EC_LEVEL_M:
+            return "Medium (~15%)";
+            break;
+        case QR_EC_LEVEL_Q:
+            return "Quartile (~25%)";
+            break;
+        case QR_EC_LEVEL_H:
+            return "High (~30%)";
+            break;
+        default:
+            return NULL;
+    }
+}
+
 int qr_detect_version(qr_mode_t mode, qr_ec_level_t ec_level, int min_version, size_t char_count) {
     switch (ec_level) {
         case QR_EC_LEVEL_L:
