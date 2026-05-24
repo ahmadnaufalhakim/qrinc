@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "qr_bitstream.h"
 #include "qr_encoding.h"
 
 #define TEST(name) printf("RUNNING: %s\n", name)
