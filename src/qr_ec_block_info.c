@@ -171,7 +171,7 @@ static const qr_ec_block_info_t qr_ec_block_info_table[QR_EC_LEVEL_COUNT][40] = 
     },
 };
 
-const qr_ec_block_info_t qr_ec_block_info(
+qr_ec_block_info_t qr_ec_block_info(
     qr_ec_level_t ec_level,
     int version) {
     return qr_ec_block_info_table[ec_level][version - 1];
