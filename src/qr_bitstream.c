@@ -68,7 +68,7 @@ char* qr_bitstream_to_str(qr_bitstream_t* bs) {
     return s;
 }
 
-void qr_bitstream_print(qr_bitstream_t* bs) {
+void qr_bitstream_print_str(qr_bitstream_t* bs) {
     char* s = qr_bitstream_to_str(bs);
     if (!s) {
         return;
@@ -77,6 +77,15 @@ void qr_bitstream_print(qr_bitstream_t* bs) {
     puts(s);
 
     free(s);
+}
+
+void qr_bitstream_print_bytes(qr_bitstream_t* bs) {
+    size_t byte_len = (bs->bit_len + 7) / 8;
+
+    for (size_t i = 0; i < byte_len; i++) {
+        printf("%02X ", bs->data[i]);
+    }
+    printf("\n");
 }
 
 bool qr_bitstream_append_bit(qr_bitstream_t* bs, bool bit) {
