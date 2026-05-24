@@ -7,6 +7,17 @@
 
 #define TEST(name) printf("RUNNING: %s\n", name)
 
+static void assert_bitstream_eq(
+    qr_bitstream_t* bs,
+    const char* expected) {
+    char* s = qr_bitstream_to_str(bs);
+
+    assert(s != NULL);
+    assert(strcmp(s, expected) == 0);
+
+    free(s);
+}
+
 void test_detect_numeric_mode() {
     const char* s = "0123456789";
     assert(qr_detect_mode((const uint8_t*)s, strlen(s)) == QR_MODE_NUMERIC);
@@ -28,188 +39,107 @@ void test_detect_kanji_mode() {
     assert(qr_detect_mode((const uint8_t*)s, strlen(s)) == QR_MODE_KANJI);
 }
 
-void test_qr_char_count_indicator() {
-    {
-        // Numeric mode, version 1-9 => 10 bits
-        char* bits = qr_char_count_indicator(
-            QR_MODE_NUMERIC,
-            1,
-            867);
+void test_qr_char_count_indicator_bits() {
+    /* Numeric mode */
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 1) == 10);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 9) == 10);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 10) == 12);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 26) == 12);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 27) == 14);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 40) == 14);
 
-        assert(bits != NULL);
-        assert(strcmp(bits, "1101100011") == 0);
+    /* Alphanumeric mode */
+    assert(qr_char_count_indicator_bits(QR_MODE_ALPHANUMERIC, 1) == 9);
+    assert(qr_char_count_indicator_bits(QR_MODE_ALPHANUMERIC, 9) == 9);
+    assert(qr_char_count_indicator_bits(QR_MODE_ALPHANUMERIC, 10) == 11);
+    assert(qr_char_count_indicator_bits(QR_MODE_ALPHANUMERIC, 26) == 11);
+    assert(qr_char_count_indicator_bits(QR_MODE_ALPHANUMERIC, 27) == 13);
+    assert(qr_char_count_indicator_bits(QR_MODE_ALPHANUMERIC, 40) == 13);
 
-        free(bits);
-    }
+    /* Byte mode */
+    assert(qr_char_count_indicator_bits(QR_MODE_BYTE, 1) == 8);
+    assert(qr_char_count_indicator_bits(QR_MODE_BYTE, 9) == 8);
+    assert(qr_char_count_indicator_bits(QR_MODE_BYTE, 10) == 16);
+    assert(qr_char_count_indicator_bits(QR_MODE_BYTE, 26) == 16);
+    assert(qr_char_count_indicator_bits(QR_MODE_BYTE, 27) == 16);
+    assert(qr_char_count_indicator_bits(QR_MODE_BYTE, 40) == 16);
 
-    {
-        // Alphanumeric mode, version 1-9 => 9 bits
-        // 11 => 000001011
-        char* bits = (char*)qr_char_count_indicator(
-            QR_MODE_ALPHANUMERIC,
-            5,
-            11);
+    /* Kanji mode */
+    assert(qr_char_count_indicator_bits(QR_MODE_KANJI, 1) == 8);
+    assert(qr_char_count_indicator_bits(QR_MODE_KANJI, 9) == 8);
+    assert(qr_char_count_indicator_bits(QR_MODE_KANJI, 10) == 10);
+    assert(qr_char_count_indicator_bits(QR_MODE_KANJI, 26) == 10);
+    assert(qr_char_count_indicator_bits(QR_MODE_KANJI, 27) == 12);
+    assert(qr_char_count_indicator_bits(QR_MODE_KANJI, 40) == 12);
 
-        assert(bits != NULL);
-        assert(strcmp(bits, "000001011") == 0);
-
-        free(bits);
-    }
-
-    {
-        // Byte mode, version 10-26 => 16 bits
-        // 13 => 0000000000001101
-        char* bits = (char*)qr_char_count_indicator(
-            QR_MODE_BYTE,
-            10,
-            13);
-
-        assert(bits != NULL);
-        assert(strcmp(bits, "0000000000001101") == 0);
-
-        free(bits);
-    }
-
-    {
-        // Kanji mode, version 27-40 => 12 bits
-        // 42 => 000000101010
-        char* bits = (char*)qr_char_count_indicator(
-            QR_MODE_KANJI,
-            30,
-            42);
-
-        assert(bits != NULL);
-        assert(strcmp(bits, "000000101010") == 0);
-
-        free(bits);
-    }
-}
-
-void test_print_binary() {
-    char out[16];
-
-    print_binary(0, 4, out);
-    assert(strcmp(out, "0000") == 0);
-
-    print_binary(7, 4, out);
-    assert(strcmp(out, "0111") == 0);
-
-    print_binary(69, 7, out);
-    assert(strcmp(out, "1000101") == 0);
-
-    print_binary(420, 10, out);
-    assert(strcmp(out, "0110100100") == 0);
+    /* Invalid versions */
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 0) == -1);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 41) == -1);
+    assert(qr_char_count_indicator_bits(QR_MODE_NUMERIC, 999) == -1);
 }
 
 void test_qr_numeric_mode_encode() {
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
+
     {
         const char* s = "8675309";
-        size_t len = strlen(s);
-        size_t count;
+        assert(qr_numeric_mode_encode(&bs, s, strlen(s)));
 
-        char (*chunks)[11] = qr_numeric_mode_encode(s, len, &count);
-        assert(chunks != NULL);
-        assert(count == 3);
-
-        /*
-         * 867 -> 1101100011 (10 bits)
-         * 530 -> 1000010010 (10 bits)
-         * 9   -> 1001       (4 bits)
-         */
-
-        assert(strcmp(chunks[0], "1101100011") == 0);
-        assert(strcmp(chunks[1], "1000010010") == 0);
-        assert(strcmp(chunks[2], "1001") == 0);
-
-        free(chunks);
+        assert_bitstream_eq(&bs,
+                            "1101100011"
+                            "1000010010"
+                            "1001");
     }
 
-    {
-        const char* s = "01234567";
-        size_t len = strlen(s);
-        size_t count;
-
-        char (*chunks)[11] = qr_numeric_mode_encode(s, len, &count);
-        assert(chunks != NULL);
-        assert(count == 3);
-
-        /*
-         * 012 -> 0000001100 (10 bits)
-         * 345 -> 0101011001 (10 bits)
-         * 67  -> 1000011    (7 bits)
-         */
-
-        assert(strcmp(chunks[0], "0000001100") == 0);
-        assert(strcmp(chunks[1], "0101011001") == 0);
-        assert(strcmp(chunks[2], "1000011") == 0);
-
-        free(chunks);
-    }
-
-    {
-        const char* s = "4267";
-        size_t len = strlen(s);
-        size_t count;
-
-        char (*chunks)[11] = qr_numeric_mode_encode(s, len, &count);
-        assert(chunks != NULL);
-        assert(count == 2);
-
-        /*
-         * 426 -> 0110101010 (10 bits)
-         * 7   -> 0111       (4 bits)
-         */
-
-        assert(strcmp(chunks[0], "0110101010") == 0);
-        assert(strcmp(chunks[1], "0111") == 0);
-
-        free(chunks);
-    }
+    qr_bitstream_free(&bs);
 }
 
 void test_qr_alphanumeric_mode_encode() {
-    const char* s = "HELLO WORLD";
-    size_t len = strlen(s);
-    size_t count;
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
 
-    char (*chunks)[12] = qr_alphanumeric_mode_encode(s, len, &count);
-    assert(chunks != NULL);
-    assert(count == 6);
+    {
+        const char* s = "HELLO WORLD";
+        assert(qr_alphanumeric_mode_encode(&bs, s, strlen(s)));
 
-    assert(strcmp(chunks[0], "01100001011") == 0);
-    assert(strcmp(chunks[1], "01111000110") == 0);
-    assert(strcmp(chunks[2], "10001011100") == 0);
-    assert(strcmp(chunks[3], "10110111000") == 0);
-    assert(strcmp(chunks[4], "10011010100") == 0);
-    assert(strcmp(chunks[5], "001101") == 0);
+        assert_bitstream_eq(&bs,
+                            "01100001011"
+                            "01111000110"
+                            "10001011100"
+                            "10110111000"
+                            "10011010100"
+                            "001101");
+    }
 
-    free(chunks);
+    qr_bitstream_free(&bs);
 }
 
 void test_qr_byte_mode_encode() {
-    const char* s = "Hello, world!";
-    size_t len = strlen(s);
-    size_t count;
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
 
-    char (*chunks)[9] = qr_byte_mode_encode(s, len, &count);
-    assert(chunks != NULL);
-    assert(count == 13);
+    {
+        const char* s = "Hello, world!";
+        assert(qr_byte_mode_encode(&bs, s, strlen(s)));
 
-    assert(strcmp(chunks[0], "01001000") == 0);
-    assert(strcmp(chunks[1], "01100101") == 0);
-    assert(strcmp(chunks[2], "01101100") == 0);
-    assert(strcmp(chunks[3], "01101100") == 0);
-    assert(strcmp(chunks[4], "01101111") == 0);
-    assert(strcmp(chunks[5], "00101100") == 0);
-    assert(strcmp(chunks[6], "00100000") == 0);
-    assert(strcmp(chunks[7], "01110111") == 0);
-    assert(strcmp(chunks[8], "01101111") == 0);
-    assert(strcmp(chunks[9], "01110010") == 0);
-    assert(strcmp(chunks[10], "01101100") == 0);
-    assert(strcmp(chunks[11], "01100100") == 0);
-    assert(strcmp(chunks[12], "00100001") == 0);
+        assert_bitstream_eq(&bs,
+                            "01001000"
+                            "01100101"
+                            "01101100"
+                            "01101100"
+                            "01101111"
+                            "00101100"
+                            "00100000"
+                            "01110111"
+                            "01101111"
+                            "01110010"
+                            "01101100"
+                            "01100100"
+                            "00100001");
+    }
 
-    free(chunks);
+    qr_bitstream_free(&bs);
 }
 
 void test_qr_kanji_mode_encode() {
@@ -229,11 +159,8 @@ void test_encoding() {
     // TEST("detect kanji mode");
     // test_detect_kanji_mode();
 
-    TEST("print binary");
-    test_print_binary();
-
-    TEST("QR char count indicator");
-    test_qr_char_count_indicator();
+    TEST("QR char count indicator bits");
+    test_qr_char_count_indicator_bits();
 
     TEST("QR numeric mode encode");
     test_qr_numeric_mode_encode();
