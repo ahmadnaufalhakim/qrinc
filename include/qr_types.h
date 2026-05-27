@@ -39,4 +39,19 @@ typedef struct {
     qr_ec_group_t groups[2];
 } qr_ec_block_info_t;
 
+typedef struct {
+    uint8_t* data_codewords;
+    size_t data_len;
+
+    uint8_t* ec_codewords;
+    size_t ec_len;
+
+    uint8_t group;
+} qr_block_t;
+
+typedef struct {
+    size_t degree;
+    const uint8_t* poly;
+} qr_rs_poly_t;
+
 #endif
