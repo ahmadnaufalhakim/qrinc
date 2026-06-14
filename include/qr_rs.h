@@ -3,6 +3,6 @@
 
 #include "qr_types.h"
 
-const uint8_t* qr_rs_generator_poly(size_t degree);
+const qr_poly_t* qr_generator_poly(size_t degree);
 
 #endif
