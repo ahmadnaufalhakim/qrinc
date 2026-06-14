@@ -50,8 +50,14 @@ typedef struct {
 } qr_block_t;
 
 typedef struct {
-    size_t degree;
-    const uint8_t* poly;
-} qr_rs_poly_t;
+    qr_block_t* blocks;
+    size_t len;
+    size_t cap;
+} qr_blocks_t;
+
+typedef struct {
+    size_t len;
+    uint8_t* coeffs;
+} qr_poly_t;
 
 #endif
