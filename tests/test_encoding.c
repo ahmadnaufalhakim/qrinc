@@ -147,6 +147,71 @@ void test_qr_kanji_mode_encode() {
     return;
 }
 
+void test_qr_assemble_data_codewords_empty() {
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
+
+    assert(qr_assemble_data_codewords(&bs, QR_EC_LEVEL_L, 1));
+    assert(bs.bit_len == 152);
+
+    char* s = qr_bitstream_to_str(&bs);
+    assert(s != NULL);
+    assert(strncmp(s, "00000000", 8) == 0);
+
+    free(s);
+    qr_bitstream_free(&bs);
+}
+
+void test_qr_assemble_data_codewords_pad_pattern() {
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
+
+    assert(qr_bitstream_append_byte(&bs, 0xAB));
+    assert(qr_assemble_data_codewords(&bs, QR_EC_LEVEL_L, 1));
+    assert(bs.bit_len == 152);
+
+    char* s = qr_bitstream_to_str(&bs);
+    assert(s != NULL);
+    /*
+     * 0xAB
+     * terminator => 0000
+     * alignment => 0000
+     * then alternating EC 11 EC 11 ...
+     */
+    assert(strncmp(s, "10101011000000001110110000010001", 32) == 0);
+
+    free(s);
+    qr_bitstream_free(&bs);
+}
+
+void test_qr_assemble_data_codewords_full_capacity() {
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
+
+    for (int i = 0; i < 19; i++) {
+        assert(qr_bitstream_append_byte(&bs, 0xAA));
+    }
+    assert(bs.bit_len == 152);
+
+    assert(qr_assemble_data_codewords(&bs, QR_EC_LEVEL_L, 1));
+    assert(bs.bit_len == 152);
+
+    qr_bitstream_free(&bs);
+}
+
+void test_qr_assemble_data_codewords_overflow() {
+    qr_bitstream_t bs;
+    qr_bitstream_init(&bs);
+
+    for (int i = 0; i < 20; i++) {
+        assert(qr_bitstream_append_byte(&bs, 0xAA));
+    }
+
+    assert(!qr_assemble_data_codewords(&bs, QR_EC_LEVEL_L, 1));
+
+    qr_bitstream_free(&bs);
+}
+
 void test_encoding() {
     TEST("detect numeric mode");
     test_detect_numeric_mode();
@@ -174,6 +239,18 @@ void test_encoding() {
 
     // TEST("QR kanji mode encode");
     // test_qr_kanji_mode_encode();
+
+    TEST("QR assemble data codewords empty");
+    test_qr_assemble_data_codewords_empty();
+
+    TEST("QR assemble data codewords pad pattern");
+    test_qr_assemble_data_codewords_pad_pattern();
+
+    TEST("QR assemble data codewords full capacity");
+    test_qr_assemble_data_codewords_full_capacity();
+
+    TEST("QR assemble data codewords overflow");
+    test_qr_assemble_data_codewords_overflow();
 
     printf("ALL ENCODING TESTS PASSED\n");
     return;
