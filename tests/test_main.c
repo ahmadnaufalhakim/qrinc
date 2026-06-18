@@ -5,6 +5,7 @@
 void test_encoding(void);
 void test_ec(void);
 void test_gf(void);
+void test_poly(void);
 
 int main(void) {
     printf("==== RUNNING TEST SUITE ====\n\n");
@@ -12,6 +13,7 @@ int main(void) {
     test_encoding();
     test_ec();
     test_gf();
+    test_poly();
 
     printf("\n==== ALL TESTS PASSED ====\n");
     return 0;
